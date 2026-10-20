@@ -75,15 +75,21 @@ export default function Page() {
     });
   };
 
-  async function send(text: string, file: File | null) {
+  async function send(text: string, files: File[]) {
     if (!active) return;
 
-    const prompt = text || `I've attached ${file?.name}. Take a look.`;
+    const names = files.map((f) => f.name);
+    const prompt =
+      text ||
+      (names.length === 1
+        ? `I've attached ${names[0]}. Take a look.`
+        : `I've attached ${names.length} documents. Take a look.`);
+
     const userMessage = {
       id: crypto.randomUUID(),
       role: "user" as const,
       content: prompt,
-      attachment: file?.name,
+      attachments: names.length > 0 ? names : undefined,
     };
 
     const history = [
@@ -94,7 +100,7 @@ export default function Page() {
     const replyId = crypto.randomUUID();
     patch(active.id, (c) => ({
       ...c,
-      title: c.messages.length === 0 ? deriveTitle(prompt, file?.name) : c.title,
+      title: c.messages.length === 0 ? deriveTitle(prompt, names) : c.title,
       messages: [
         ...c.messages,
         userMessage,
@@ -108,7 +114,7 @@ export default function Page() {
 
     const body = new FormData();
     body.append("messages", JSON.stringify(history));
-    if (file) body.append("attachment", file);
+    for (const f of files) body.append("attachments", f);
 
     try {
       const res = await fetch("/api/chat", { method: "POST", body });

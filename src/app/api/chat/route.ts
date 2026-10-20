@@ -4,15 +4,16 @@ import { streamChat, hermesConfigured, type HermesMessage } from "@/lib/hermes";
 export const maxDuration = 300;
 
 const MAX_ATTACHMENT_BYTES = 50 * 1024 * 1024;
+const MAX_ATTACHMENTS = 25;
 
 const line = (obj: unknown) => new TextEncoder().encode(JSON.stringify(obj) + "\n");
 
 /**
  * Forwards a conversation to nouveauhermes and streams the reply back.
  *
- * Attachments are written to a directory Hermes can read and referenced by
- * path in the message, because the agent reads files with its own tools
- * rather than receiving bytes over this wire.
+ * Attachments are written to a per-send directory Hermes can read and are
+ * referenced by path in the message, because the agent reads files with its
+ * own tools rather than receiving bytes over this wire.
  */
 export async function POST(req: NextRequest) {
   if (!hermesConfigured()) {
@@ -37,31 +38,50 @@ export async function POST(req: NextRequest) {
     }
     messages = raw as HermesMessage[];
 
-    const file = form.get("attachment");
-    if (file instanceof File) {
-      if (file.size > MAX_ATTACHMENT_BYTES) {
-        return Response.json(
-          { error: `Attachment is ${Math.round(file.size / 1e6)} MB; the limit is 50 MB.` },
-          { status: 413 },
-        );
-      }
+    const attachments = form.getAll("attachments").filter((a): a is File => a instanceof File);
 
+    if (attachments.length > MAX_ATTACHMENTS) {
+      return Response.json(
+        { error: `${attachments.length} files attached; the limit is ${MAX_ATTACHMENTS}.` },
+        { status: 413 },
+      );
+    }
+
+    const oversized = attachments.filter((f) => f.size > MAX_ATTACHMENT_BYTES);
+    if (oversized.length > 0) {
+      return Response.json(
+        { error: `Over 50 MB: ${oversized.map((f) => f.name).join(", ")}.` },
+        { status: 413 },
+      );
+    }
+
+    if (attachments.length > 0) {
       const { writeFile, mkdir } = await import("node:fs/promises");
       const { join } = await import("node:path");
       const { homedir } = await import("node:os");
 
-      const dir = join(homedir(), ".hermes", "nouveau", "uploads");
+      // One directory per send, so a batch of past bids stays together and the
+      // agent can be pointed at the folder rather than at each file.
+      const batch = `${Date.now()}`;
+      const dir = join(homedir(), ".hermes", "nouveau", "uploads", batch);
       await mkdir(dir, { recursive: true });
 
-      // Keep the original name so the agent can refer to it the way the user does.
-      const safeName = file.name.replace(/[^\w.\-]/g, "_");
-      const path = join(dir, `${Date.now()}-${safeName}`);
-      await writeFile(path, Buffer.from(await file.arrayBuffer()));
+      const written: string[] = [];
+      for (const file of attachments) {
+        // Keep the original name: the agent should refer to a document the
+        // way the person does.
+        const safeName = file.name.replace(/[^\w.\-]/g, "_") || "attachment";
+        const path = join(dir, safeName);
+        await writeFile(path, Buffer.from(await file.arrayBuffer()));
+        written.push(path);
+      }
 
       const last = messages[messages.length - 1];
       last.content =
-        `${last.content}\n\n[The user attached a file. It is saved at ${path} — ` +
-        `read it with your own tools.]`;
+        `${last.content}\n\n[The user attached ${written.length} ` +
+        `${written.length === 1 ? "file" : "files"} in ${dir}:\n` +
+        written.map((w) => `  ${w}`).join("\n") +
+        `\nRead them with your own tools.]`;
     }
   } catch (err) {
     console.error("[chat] request", err);

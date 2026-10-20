@@ -12,8 +12,8 @@ export type Message = {
   id: string;
   role: Role;
   content: string;
-  /** File name, when the person attached something to this message. */
-  attachment?: string;
+  /** File names, when the person attached anything to this message. */
+  attachments?: string[];
 };
 
 export type Conversation = {
@@ -58,11 +58,14 @@ export function save(conversations: Conversation[]): void {
  * Names a conversation from its first message. A solicitation number is the
  * most useful handle when several bids are open at once, so prefer one.
  */
-export function deriveTitle(text: string, attachment?: string): string {
+export function deriveTitle(text: string, attachments: string[] = []): string {
   const solicitation = text.match(/\b[A-Z]{2,6}[-\s]?\d{2}[-\s]?\d{2,4}\b/);
   if (solicitation) return solicitation[0].replace(/\s/g, "-");
 
-  if (attachment) return attachment.replace(/\.[^.]+$/, "").slice(0, 42);
+  if (attachments.length > 1) return `${attachments.length} documents`;
+  if (attachments.length === 1) {
+    return attachments[0].replace(/\.[^.]+$/, "").slice(0, 42);
+  }
 
   const firstLine = text.trim().split("\n")[0];
   return firstLine.length > 42 ? `${firstLine.slice(0, 42)}…` : firstLine || "New bid";
