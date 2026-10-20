@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import Message from "@/components/Message";
 import Composer from "@/components/Composer";
+import Thinking from "@/components/Thinking";
 import {
   type Conversation,
   deriveTitle,
@@ -18,6 +19,7 @@ export default function Page() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [online, setOnline] = useState<boolean | null>(null);
+  const [heavy, setHeavy] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
   const inFlight = useRef<AbortController | null>(null);
 
@@ -111,6 +113,7 @@ export default function Page() {
     }));
 
     setBusy(true);
+    setHeavy(files.length > 0);
     setError("");
 
     // A turn that reads a 239-page packet is slow; a turn that has stalled
@@ -204,17 +207,7 @@ export default function Page() {
               <Message key={m.id} message={m} />
             ))}
 
-            {busy && (
-              <div className="flex items-center gap-3 text-[13px] text-steel-500">
-                <span className="animate-pulse">Working</span>
-                <button
-                  onClick={stop}
-                  className="rounded border border-steel-300 px-2 py-0.5 text-[11px] hover:border-steel-500 hover:text-steel-950"
-                >
-                  Stop
-                </button>
-              </div>
-            )}
+            {busy && <Thinking heavy={heavy} onStop={stop} />}
 
             {error && (
               <div className="rounded-lg border border-conflict/30 bg-conflict/5 px-4 py-3 text-[13px] text-conflict">
