@@ -10,6 +10,8 @@ type Props = {
   onSelect: (id: string) => void;
   onCreate: () => void;
   onDelete: (id: string) => void;
+  profile: { verified: number; pending: number; expected: number } | null;
+  onOpenProfile: () => void;
 };
 
 const relative = (ts: number) => {
@@ -28,6 +30,8 @@ export default function Sidebar({
   onSelect,
   onCreate,
   onDelete,
+  profile,
+  onOpenProfile,
 }: Props) {
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-steel-300/60 bg-white">
@@ -87,15 +91,37 @@ export default function Sidebar({
       {/* The profile is what actually blocks every fill, so its state is
           permanently visible rather than buried a screen away. */}
       <div className="border-t border-steel-300/60 px-4 py-3">
-        <div className="flex items-baseline justify-between">
-          <span className="text-xs text-steel-500">Company profile</span>
-          <span className="value text-xs font-medium text-unconfirmed">0 of 40</span>
-        </div>
-        <div className="mt-2 h-1 overflow-hidden rounded-full bg-steel-300/50">
-          <div className="h-full w-0 bg-confirmed" />
-        </div>
+        <button onClick={onOpenProfile} className="w-full text-left">
+          <div className="flex items-baseline justify-between">
+            <span className="text-xs text-steel-500 underline-offset-2 hover:underline">
+              Company profile
+            </span>
+            <span
+              className={cn(
+                "value text-xs font-medium",
+                profile && profile.verified > 0 ? "text-confirmed" : "text-unconfirmed",
+              )}
+            >
+              {profile ? `${profile.verified} of ${profile.expected}` : "—"}
+            </span>
+          </div>
+
+          <div className="mt-2 h-1 overflow-hidden rounded-full bg-steel-300/50">
+            <div
+              className="h-full bg-confirmed transition-[width] duration-500"
+              style={{
+                width: profile
+                  ? `${Math.round((profile.verified / profile.expected) * 100)}%`
+                  : "0%",
+              }}
+            />
+          </div>
+        </button>
+
         <p className="mt-2 text-[11px] leading-snug text-steel-500">
-          Nothing fills until facts are confirmed.
+          {profile && profile.pending > 0
+            ? `${profile.pending} awaiting your confirmation.`
+            : "Nothing fills until facts are confirmed."}
         </p>
 
         <div className="mt-3 flex items-center gap-1.5 border-t border-steel-300/60 pt-3">

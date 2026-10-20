@@ -5,6 +5,7 @@ import Sidebar from "@/components/Sidebar";
 import Message from "@/components/Message";
 import Composer from "@/components/Composer";
 import Thinking from "@/components/Thinking";
+import ProfilePanel from "@/components/ProfilePanel";
 import {
   type Conversation,
   deriveTitle,
@@ -20,6 +21,12 @@ export default function Page() {
   const [error, setError] = useState("");
   const [online, setOnline] = useState<boolean | null>(null);
   const [heavy, setHeavy] = useState(false);
+  const [profile, setProfile] = useState<{
+    verified: number;
+    pending: number;
+    expected: number;
+  } | null>(null);
+  const [showProfile, setShowProfile] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
   const inFlight = useRef<AbortController | null>(null);
 
@@ -36,6 +43,15 @@ export default function Page() {
       setActiveId(first.id);
     }
   }, []);
+
+  const loadProfile = useCallback(() => {
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((j) => j.summary && setProfile(j.summary))
+      .catch(() => setProfile(null));
+  }, []);
+
+  useEffect(loadProfile, [loadProfile]);
 
   useEffect(() => {
     fetch("/api/health")
@@ -182,6 +198,7 @@ export default function Page() {
       clearTimeout(ceiling);
       inFlight.current = null;
       setBusy(false);
+      loadProfile();
     }
   }
 
@@ -196,7 +213,18 @@ export default function Page() {
         onSelect={setActiveId}
         onCreate={create}
         onDelete={remove}
+        profile={profile}
+        onOpenProfile={() => setShowProfile(true)}
       />
+
+      {showProfile && (
+        <ProfilePanel
+          onClose={() => {
+            setShowProfile(false);
+            loadProfile();
+          }}
+        />
+      )}
 
       <main className="flex flex-1 flex-col bg-paper">
         <div className="flex-1 overflow-y-auto">
