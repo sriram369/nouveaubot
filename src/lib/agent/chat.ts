@@ -1,4 +1,4 @@
-import { vertex, READER_MODEL } from "@/lib/gcp/vertex";
+import { genai, READER_MODEL } from "@/lib/gcp/vertex";
 import { declarations, runTool, type AgentState } from "@/lib/agent/tools";
 
 export const SYSTEM_PROMPT = `You help a commercial elevator contractor bid on
@@ -43,26 +43,29 @@ export async function* runTurn(
   history: ChatTurn[],
   state: AgentState,
 ): AsyncGenerator<AgentEvent> {
-  const model = vertex().getGenerativeModel({
-    model: READER_MODEL,
-    systemInstruction: SYSTEM_PROMPT,
-    tools: [{ functionDeclarations: declarations }],
-    generationConfig: { temperature: 0.2 },
-  });
-
   const contents: Array<Record<string, unknown>> = history.map((t) => ({
     role: t.role,
     parts: [{ text: t.text }],
   }));
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-    const result = await model.generateContent({ contents: contents as never });
-    const candidate = result.response.candidates?.[0];
-    const parts = candidate?.content?.parts ?? [];
+    const result = await genai().models.generateContent({
+      model: READER_MODEL,
+      contents: contents as never,
+      config: {
+        systemInstruction: SYSTEM_PROMPT,
+        temperature: 0.2,
+        tools: [{ functionDeclarations: declarations }],
+      },
+    });
 
-    const calls = parts.filter((p) => "functionCall" in p && p.functionCall);
+    const parts = (result.candidates?.[0]?.content?.parts ?? []) as Array<
+      Record<string, unknown>
+    >;
+
+    const calls = parts.filter((p) => Boolean(p.functionCall));
     const texts = parts
-      .map((p) => ("text" in p ? p.text : ""))
+      .map((p) => (typeof p.text === "string" ? p.text : ""))
       .filter((t): t is string => Boolean(t));
 
     for (const text of texts) yield { type: "text", text };

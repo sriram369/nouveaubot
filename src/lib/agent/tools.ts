@@ -1,4 +1,4 @@
-import { FunctionDeclarationSchemaType, type FunctionDeclaration } from "@google-cloud/vertexai";
+import { Type, type FunctionDeclaration } from "@/lib/gcp/vertex";
 import { readPacket, type PacketReading } from "@/lib/packet/read";
 import { extractProfileFacts, clusterFacts } from "@/lib/packet/extract-profile";
 import { resolveTemplate, summarize, type BidContext } from "@/lib/fill/resolve";
@@ -13,7 +13,7 @@ import type { FormTemplate } from "@/lib/forms/types";
  * resolver. The model is never the source of a fact on a signed document.
  */
 
-const { STRING, OBJECT, NUMBER, BOOLEAN } = FunctionDeclarationSchemaType;
+const { STRING, OBJECT, BOOLEAN } = Type;
 
 export const declarations: FunctionDeclaration[] = [
   {

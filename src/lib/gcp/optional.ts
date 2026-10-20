@@ -6,4 +6,9 @@
 export const persistenceConfigured = () =>
   Boolean(process.env.GOOGLE_CLOUD_PROJECT && process.env.PACKETS_BUCKET);
 
-export const vertexConfigured = () => Boolean(process.env.GOOGLE_CLOUD_PROJECT);
+export const vertexConfigured = () =>
+  Boolean(
+    process.env.GEMINI_API_KEY ||
+      (process.env.GOOGLE_GENAI_USE_VERTEXAI === "true" &&
+        process.env.GOOGLE_CLOUD_PROJECT),
+  );
