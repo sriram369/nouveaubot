@@ -1,7 +1,7 @@
 {
   "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"cd /tmp && curl -fsSL https://raw.githubusercontent.com/nousresearch/hermes-agent/main/install.sh -o hermes-install.sh 2>&1; ls -la hermes-install.sh 2>&1 | head -2; head -40 hermes-instal...",
-  "error": "Exit code 1\ncurl: (56) The requested URL returned error: 404\nls: hermes-install.sh: No such file or directory\nhead: hermes-install.sh: No such file or directory",
-  "timestamp": "2026-10-20T13:43:30.342Z",
+  "tool_input_preview": "{\"command\":\"python3 -c \\\"\\nimport yaml\\nd=yaml.safe_load(open('/Users/sriram/.hermes/config.yaml'))\\nprint('agent keys:', list(d.get('agent',{}).keys())[:20])\\nprint('name:', d.get('agent',{}).get('na...",
+  "error": "Exit code 1\nagent keys: ['max_turns', 'verbose', 'reasoning_effort', 'reasoning_overrides', 'service_tier', 'fast_auto_seconds', 'personalities']\nname: None\nskills keys: ['creation_nudge_interval']\n-rw-------@ 1 sriram  staff  28143 Oct 20 09:51 /Users/sriram/.hermes/.env\nls: /Users/sriram/.hermes/hermes-agent/.env: No such file or directory",
+  "timestamp": "2026-10-20T13:52:51.435Z",
   "retry_count": 1
 }
