@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# nouveaubot
 
-## Getting Started
+Nouveau Elevator bids on public housing authority contracts for elevator
+preventive maintenance. Each solicitation arrives as a single PDF of two
+hundred or more pages, of which roughly a dozen are forms that must be filled
+and returned. The same state and federal forms recur across every authority,
+so the work is almost entirely repetition.
 
-First, run the development server:
+nouveaubot reads a packet, reports what must be submitted and when, and fills
+the recurring forms from company facts a person has confirmed.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## How it is put together
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+    browser ──▶ Next.js ──▶ nouveauhermes ──▶ Gemini
+                             (Hermes Agent)
+                                  │
+                         nouveau-bids skill
+                                  │
+                    ~/.hermes/nouveau/profile.json
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The web app is the interface. nouveauhermes is the agent: it owns the loop,
+the tools, the skills, and the memory, and it is reachable over Hermes'
+OpenAI-compatible gateway. The company profile is a file both of them read.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Running it
 
-## Learn More
+    npm install
+    cp .env.example .env.local        # add a Google AI Studio key
 
-To learn more about Next.js, take a look at the following resources:
+    cp -R hermes/SOUL.md ~/.hermes/SOUL.md
+    cp -R hermes/skills/nouveau-bids ~/.hermes/skills/
+    hermes gateway run                # the agent
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+    npm run dev                       # the interface
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+See `hermes/README.md` for installing Hermes itself.
 
-## Deploy on Vercel
+## The rule the design is built around
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+A value reaches a bid form only when a person has marked it confirmed. The
+model decides what to do; it never supplies a company fact.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+These forms are signed under penalties of perjury. A plausible invented tax
+identification number is a false statement to a government body, not a defect
+to correct in the next release. So facts travel one way — from a person, or
+from a document a person approved — and anything unconfirmed is shown for
+review rather than printed.
+
+The same reasoning covers deadlines. When a packet contradicts itself, every
+version is reported with its page and the user is told to confirm in writing
+with the awarding authority. Nothing picks one.
+
+## What is not automated
+
+Bid price, surety bonds, notarisation, and certificates issued by the
+Commonwealth. These are named as outstanding and left to a person.
+
+## Layout
+
+    src/app            interface and API routes
+    src/lib/hermes.ts  the wire to nouveauhermes
+    src/lib/fill       form field resolution and PDF overlay
+    src/lib/forms      form templates and field maps
+    hermes/            SOUL.md and the nouveau-bids skill
+
+Company data is never committed. `.env.local` and the profile both sit
+outside this repository.

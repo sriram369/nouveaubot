@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"npx tsc --noEmit 2>&1 | head -5; echo \\\"tsc: clean if blank above\\\"; pkill -f \\\"next dev\\\" 2>/dev/null; sleep 1; (nohup npm run dev > /tmp/dev.log 2>&1 &); for i in $(seq 1 30); do curl -s...",
-  "error": "Exit code 7\ntsc: clean if blank above",
-  "timestamp": "2026-10-20T14:10:49.728Z",
-  "retry_count": 1
-}

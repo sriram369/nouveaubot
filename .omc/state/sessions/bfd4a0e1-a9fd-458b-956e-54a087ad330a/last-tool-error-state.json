@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"for d in /Users/sriram/Projects/wt-aia-math /Users/sriram/Projects/Nouveau.mern /Users/sriram/Projects/Nouveau.mern-fresh /Users/sriram/Projects/wt-aia-pdf /Users/sriram/Projects/aia-port-...",
-  "error": "Exit code 128\n=== /Users/sriram/Projects/wt-aia-math\nport/aia-integration\n=== /Users/sriram/Projects/Nouveau.mern\nmain\n=== /Users/sriram/Projects/Nouveau.mern-fresh\nmain\n=== /Users/sriram/Projects/wt-aia-pdf\nport/aia-pdf\n=== /Users/sriram/Projects/aia-port-spec",
-  "timestamp": "2026-10-20T13:42:05.773Z",
-  "retry_count": 1
-}
