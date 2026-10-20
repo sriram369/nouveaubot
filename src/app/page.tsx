@@ -19,6 +19,7 @@ export default function Page() {
   const [error, setError] = useState("");
   const [online, setOnline] = useState<boolean | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
+  const inFlight = useRef<AbortController | null>(null);
 
   const active = conversations.find((c) => c.id === activeId);
 
@@ -112,12 +113,23 @@ export default function Page() {
     setBusy(true);
     setError("");
 
+    // A turn that reads a 239-page packet is slow; a turn that has stalled
+    // looks identical from here. The ceiling tells them apart, and the stop
+    // button means they never have to wait to find out.
+    const controller = new AbortController();
+    inFlight.current = controller;
+    const ceiling = setTimeout(() => controller.abort("timeout"), 5 * 60_000);
+
     const body = new FormData();
     body.append("messages", JSON.stringify(history));
     for (const f of files) body.append("attachments", f);
 
     try {
-      const res = await fetch("/api/chat", { method: "POST", body });
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        body,
+        signal: controller.signal,
+      });
 
       if (!res.ok || !res.body) {
         const json = await res.json().catch(() => ({}));
@@ -154,11 +166,23 @@ export default function Page() {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unexpected error.");
+      if (controller.signal.aborted) {
+        setError(
+          controller.signal.reason === "timeout"
+            ? "nouveauhermes did not finish within five minutes. It may still be working — check `hermes gateway status`."
+            : "Stopped.",
+        );
+      } else {
+        setError(err instanceof Error ? err.message : "Unexpected error.");
+      }
     } finally {
+      clearTimeout(ceiling);
+      inFlight.current = null;
       setBusy(false);
     }
   }
+
+  const stop = () => inFlight.current?.abort("stopped");
 
   return (
     <div className="flex h-dvh">
@@ -181,9 +205,15 @@ export default function Page() {
             ))}
 
             {busy && (
-              <p className="text-[13px] text-steel-500">
-                <span className="animate-pulse">Reading</span>
-              </p>
+              <div className="flex items-center gap-3 text-[13px] text-steel-500">
+                <span className="animate-pulse">Working</span>
+                <button
+                  onClick={stop}
+                  className="rounded border border-steel-300 px-2 py-0.5 text-[11px] hover:border-steel-500 hover:text-steel-950"
+                >
+                  Stop
+                </button>
+              </div>
             )}
 
             {error && (
