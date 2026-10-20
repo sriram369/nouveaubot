@@ -39,3 +39,21 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# --- bidfill: never commit company or bid data ---
+# Profiles hold FEIN, officer names, insurance policy numbers.
+/data/
+*.profile.json
+*.profile.yaml
+
+# Bid packets and filled submissions
+/packets/
+/out/
+*.filled.pdf
+
+# Google credentials
+service-account*.json
+application_default_credentials.json
+.env
+.env.*
+!.env.example
